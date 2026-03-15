@@ -1,7 +1,7 @@
 // ============================================================
-//  Turnos Trabajo Social - Hospital Piñeiro GCBA
+//  Turnos Trabajo Social - Hospital Piñero GCBA
 //  1. Creá una Google Spreadsheet nueva y copiá su ID aquí:
-var SPREADSHEET_ID = '1tUGONyh9aNQXJQg4EE6xzWsRwTHk6WAFZvbLdpryno8';
+var SPREADSHEET_ID = 'TU_SPREADSHEET_ID_AQUI';
 //     (la ID está en la URL: docs.google.com/spreadsheets/d/ID/edit)
 //  2. Pegá este código en script.google.com → Nuevo proyecto
 //  3. Ejecutá setupSheets() una vez para crear las hojas
@@ -20,6 +20,7 @@ function doGet(e)  { return handleRequest(e); }
 function doPost(e) { return handleRequest(e); }
 
 function handleRequest(e) {
+  e = e || {};  // guard: cuando se ejecuta desde el editor e es undefined
   var p = e.parameter || {};
   // Apps Script parte valores con comas en arrays — reconstruir fechas si es necesario
   try {
@@ -121,14 +122,8 @@ function setupSheets() {
   if (sc.getLastRow() === 0) {
     sc.appendRow(['id','nombre','color','foto','descripcion']);
     var defs = [
-      [1,'Consultorio 1','#1a6abf','',''],
-      [2,'Consultorio 2','#e07830','',''],
-      [3,'Consultorio 3','#c0392b','',''],
-      [4,'Consultorio 4','#8e44ad','',''],
-      [5,'Consultorio 5','#d68910','',''],
-      [6,'Consultorio 6','#2980b9','',''],
-      [7,'Consultorio 7','#27ae60','',''],
-      [8,'Consultorio 8','#b84a00','','']
+      [1,'Consultorio A','#1a6abf','','Planta baja - Servicio de Trabajo Social'],
+      [2,'Consultorio B','#26874A','','Planta baja - Servicio de Trabajo Social']
     ];
     for (var i=0;i<defs.length;i++) sc.appendRow(defs[i]);
   }
@@ -138,9 +133,9 @@ function setupSheets() {
     sa.appendRow(['id','tipo','titulo','texto','fecha','createdAt']);
     var now = new Date().toISOString();
     var defaultAvisos = [
-      ['ok','Sistema de turnos en línea','Bienvenidos al sistema de reservas del Servicio de Trabajo Social del Hospital Piñeiro. Desde esta app podés reservar cualquiera de los dos consultorios disponibles.','1 mar 2026'],
+      ['ok','Sistema de turnos en línea','Bienvenidos al sistema de reservas del Servicio de Trabajo Social del Hospital Piñero. Desde esta app podés reservar cualquiera de los dos consultorios disponibles.','1 mar 2026'],
       ['general','Uso del espacio','Recordamos que al finalizar cada turno es necesario dejar el consultorio ordenado y en condiciones para el siguiente usuario.','5 mar 2026'],
-      ['info','Nuevos horarios de recepción','A partir del lunes 16 de marzo la recepción abre de 7:30 a 20:00 hs de lunes a viernes, y de 8:00 a 14:00 hs los sábados.','10 mar 2026'],
+      ['info','Horario de atención','El servicio atiende de lunes a viernes de 8:00 a 20:00 hs. Los consultorios se pueden reservar con hasta 30 días de anticipación.','10 mar 2026'],
       ['general','Horarios disponibles','Los consultorios están disponibles para reserva de lunes a viernes de 8:00 a 20:00 hs.','10 mar 2026']
     ];
     for (var i=0; i<defaultAvisos.length; i++) {
@@ -161,14 +156,15 @@ function getAvisos(p) {
 }
 
 function addAviso(p) {
-  if (!isAdmin(p.adminId)) return {ok:false, error:'Sin permiso'};
+  // En T. Social Piñero todos los usuarios pueden publicar avisos
+  if (!p.userId && !p.adminId) return {ok:false, error:'Sin identificación'};
   if (!p.titulo||!p.texto) return {ok:false, error:'Faltan datos'};
   var sheet = getSheet('Avisos') || getSpreadsheet().insertSheet('Avisos');
-  if (sheet.getLastRow() === 0) sheet.appendRow(['id','tipo','titulo','texto','fecha','createdAt']);
+  if (sheet.getLastRow() === 0) sheet.appendRow(['id','tipo','titulo','texto','fecha','createdAt','userId','userName']);
   var id = genId();
   // Insertar en fila 2 (debajo del header) para que quede al tope
   if (sheet.getLastRow() > 1) sheet.insertRowAfter(1);
-  sheet.getRange(2,1,1,6).setValues([[id, p.tipo||'general', p.titulo, p.texto, p.fecha||'', new Date().toISOString()]]);
+  sheet.getRange(2,1,1,8).setValues([[id, p.tipo||'general', p.titulo, p.texto, p.fecha||'', new Date().toISOString(), p.userId||'', p.userName||'']]);
   return {ok:true, id:id};
 }
 
@@ -468,11 +464,11 @@ function sendConfirmationEmail(p, reservationId) {
     var endH   = parseInt(p.endH);
     var horario = startH+':00 - '+endH+':00 hs';
 
-    var asunto = '[Integra Mas] Reserva confirmada: ' + consultorio;
+    var asunto = '[T. Social Piñero] Reserva confirmada: ' + consultorio;
 
     var cuerpoHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fdf6f0;border-radius:12px;overflow:hidden">'
       + '<div style="background:#1a6abf;padding:24px 28px;text-align:center">'
-      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑEIRO</p>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑERO</p>'
       + '<p style="color:rgba(255,255,255,.6);font-size:11px;margin:4px 0 0">Ampliando Posibilidades</p>'
       + '</div>'
       + '<div style="padding:28px">'
@@ -485,7 +481,7 @@ function sendConfirmationEmail(p, reservationId) {
       + '<tr><td style="padding:10px 0;color:#6b5a50;font-size:13px">Horario</td>'
       + '<td style="padding:10px 0;color:#1a1410;font-size:13px;font-weight:600;text-align:right">'+horario+'</td></tr>'
       + '</table>'
-      + '<div style="background:#fff3e8;border-left:3px solid #c25a00;border-radius:4px;padding:12px 16px;margin-top:20px">'
+      + '<div style="background:#e8f0fb;border-left:3px solid #1a6abf;border-radius:4px;padding:12px 16px;margin-top:20px">'
       + '<p style="color:#6b5a50;font-size:12px;margin:0">Para cancelar tu reserva ingres&aacute; a la app en <strong>Mis Turnos</strong>.</p>'
       + '</div>'
       + '</div>'
@@ -493,7 +489,7 @@ function sendConfirmationEmail(p, reservationId) {
 
     GmailApp.sendEmail(userEmail, asunto, 
       'Reserva confirmada: '+consultorio+' el '+fechaDisplay+' de '+horario,
-      { htmlBody: cuerpoHtml, name: 'Integra Mas', charset: 'UTF-8' }
+      { htmlBody: cuerpoHtml, name: 'T. Social Piñero', charset: 'UTF-8' }
     );
   } catch(err) {
     // No interrumpir la reserva si falla el email
@@ -527,10 +523,10 @@ function sendCancellationEmail(reserva) {
     var fechaDisplay = parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : reserva.fecha;
     var horario = parseInt(reserva.startH)+':00 - '+parseInt(reserva.endH)+':00 hs';
 
-    var asunto = '[Integra Mas] Reserva cancelada: ' + consultorio;
+    var asunto = '[T. Social Piñero] Reserva cancelada: ' + consultorio;
     var cuerpoHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fdf6f0;border-radius:12px;overflow:hidden">'
       + '<div style="background:#1a6abf;padding:24px 28px;text-align:center">'
-      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑEIRO</p>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑERO</p>'
       + '</div>'
       + '<div style="padding:28px">'
       + '<p style="color:#1a1410;font-size:16px;font-weight:700;margin:0 0 20px">Hola '+userName+', tu reserva fue cancelada.</p>'
@@ -546,7 +542,7 @@ function sendCancellationEmail(reserva) {
 
     GmailApp.sendEmail(userEmail, asunto,
       'Tu reserva en '+consultorio+' el '+fechaDisplay+' fue cancelada.',
-      { htmlBody: cuerpoHtml, name: 'Integra Mas', charset: 'UTF-8' }
+      { htmlBody: cuerpoHtml, name: 'T. Social Piñero', charset: 'UTF-8' }
     );
   } catch(err) {
     Logger.log('Error email cancelacion: '+err.message);
@@ -582,14 +578,14 @@ function recoverPassword(p) {
 
   // Enviar email
   try {
-    var asunto = '[Integra Mas] Tu nueva contrasena temporal';
+    var asunto = '[T. Social Piñero] Tu nueva contrasena temporal';
     var cuerpoHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fdf6f0;border-radius:12px;overflow:hidden">'
       + '<div style="background:#1a6abf;padding:24px 28px;text-align:center">'
-      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑEIRO</p>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑERO</p>'
       + '</div>'
       + '<div style="padding:28px">'
       + '<p style="color:#1a1410;font-size:16px;font-weight:700;margin:0 0 16px">Hola '+found.nombre+', aqu&iacute; est&aacute; tu contrase&ntilde;a temporal.</p>'
-      + '<div style="background:#fff3e8;border:2px solid #c25a00;border-radius:10px;padding:18px;text-align:center;margin:20px 0">'
+      + '<div style="background:#e8f0fb;border:2px solid #c25a00;border-radius:10px;padding:18px;text-align:center;margin:20px 0">'
       + '<p style="color:#6b5a50;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">Tu nueva contrase&ntilde;a</p>'
       + '<p style="color:#c25a00;font-size:28px;font-weight:800;margin:0;letter-spacing:4px;font-family:monospace">'+tempPw+'</p>'
       + '</div>'
@@ -599,7 +595,7 @@ function recoverPassword(p) {
 
     GmailApp.sendEmail(found.email, asunto,
       'Tu nueva contrasena temporal es: ' + tempPw,
-      { htmlBody: cuerpoHtml, name: 'Integra Mas', charset: 'UTF-8' }
+      { htmlBody: cuerpoHtml, name: 'T. Social Piñero', charset: 'UTF-8' }
     );
   } catch(err) {
     Logger.log('Error email recuperacion: ' + err.message);
@@ -664,7 +660,7 @@ function sendBatchConfirmationEmail(p, fechas) {
     var sH = parseInt(p.startH), eH = parseInt(p.endH);
     var horario = sH + ':00 - ' + eH + ':00 hs';
 
-    var asunto = '[Integra Mas] ' + fechas.length + ' reservas confirmadas: ' + consultorio;
+    var asunto = '[T. Social Piñero] ' + fechas.length + ' reservas confirmadas: ' + consultorio;
 
     var filas = '';
     for (var i=0; i<fechas.length; i++) {
@@ -680,7 +676,7 @@ function sendBatchConfirmationEmail(p, fechas) {
     var cuerpoHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>'
       + '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#fdf6f0;border-radius:12px;overflow:hidden">'
       + '<div style="background:#1a6abf;padding:24px 28px;text-align:center">'
-      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑEIRO</p>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑERO</p>'
       + '</div>'
       + '<div style="padding:28px">'
       + '<p style="color:#1a1410;font-size:16px;font-weight:700;margin:0 0 6px">Hola '+userName+'</p>'
@@ -692,14 +688,14 @@ function sendBatchConfirmationEmail(p, fechas) {
       + '</tr></thead>'
       + '<tbody>'+filas+'</tbody>'
       + '</table>'
-      + '<div style="background:#fff3e8;border-left:3px solid #c25a00;border-radius:4px;padding:12px 16px;margin-top:20px">'
+      + '<div style="background:#e8f0fb;border-left:3px solid #1a6abf;border-radius:4px;padding:12px 16px;margin-top:20px">'
       + '<p style="color:#6b5a50;font-size:12px;margin:0">Para cancelar cualquier reserva ingres&aacute; a la app en <strong>Mis Turnos</strong>.</p>'
       + '</div>'
       + '</div></div></body></html>';
 
     GmailApp.sendEmail(userEmail, asunto,
       'Se crearon ' + fechas.length + ' reservas en ' + consultorio + ' de ' + horario,
-      { htmlBody: cuerpoHtml, name: 'Integra Mas', charset: 'UTF-8' });
+      { htmlBody: cuerpoHtml, name: 'T. Social Piñero', charset: 'UTF-8' });
   } catch(err) {
     Logger.log('Error email batch: ' + err.message);
   }
@@ -753,16 +749,16 @@ function resendVerification(p) {
 
 function sendVerificationEmail(email, nombre, code) {
   try {
-    var asunto = '[Integra Mas] Tu codigo de verificacion: ' + code;
+    var asunto = '[T. Social Piñero] Tu codigo de verificacion: ' + code;
     var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>'
       + '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fdf6f0;border-radius:12px;overflow:hidden">'
       + '<div style="background:#1a6abf;padding:24px 28px;text-align:center">'
-      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑEIRO</p>'
+      + '<p style="color:rgba(255,255,255,.7);font-size:12px;margin:0;letter-spacing:2px">TRABAJO SOCIAL · PIÑERO</p>'
       + '</div>'
       + '<div style="padding:28px">'
       + '<p style="color:#1a1410;font-size:16px;font-weight:700;margin:0 0 8px">Hola ' + nombre + '</p>'
       + '<p style="color:#6b5a50;font-size:13px;margin:0 0 24px">Ingresa este codigo en la app para verificar tu cuenta:</p>'
-      + '<div style="background:#fff3e8;border:2px solid #c25a00;border-radius:10px;padding:20px;text-align:center;margin:0 0 20px">'
+      + '<div style="background:#e8f0fb;border:2px solid #c25a00;border-radius:10px;padding:20px;text-align:center;margin:0 0 20px">'
       + '<p style="color:#6b5a50;font-size:11px;margin:0 0 8px;text-transform:uppercase;letter-spacing:2px">Codigo de verificacion</p>'
       + '<p style="color:#c25a00;font-size:40px;font-weight:800;margin:0;letter-spacing:10px;font-family:monospace">' + code + '</p>'
       + '</div>'
@@ -770,7 +766,7 @@ function sendVerificationEmail(email, nombre, code) {
       + '</div></div></body></html>';
     GmailApp.sendEmail(email, asunto,
       'Tu codigo de verificacion es: ' + code,
-      {htmlBody: html, name: 'Integra Mas', charset: 'UTF-8'});
+      {htmlBody: html, name: 'T. Social Piñero', charset: 'UTF-8'});
   } catch(e) {
     Logger.log('Error email verificacion: ' + e.message);
   }

@@ -670,7 +670,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbzweCGMRs1nVbFxBlpj-OT6Yb55W5FHB1SazccKAZVY7DsrXghBVBzLVsaIs7RWqw1N/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 var CU=null, RR=[], AU=[];
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -701,7 +701,7 @@ function parseDate(s){var p=s.split('-');return new Date(parseInt(p[0]),parseInt
 function today(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function fmtDate(s){var d=parseDate(s);return pad(d.getDate())+' '+MONTHS[d.getMonth()].substring(0,3).toLowerCase();}
 function fmtDateLong(s){var d=parseDate(s);var ds=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];return ds[d.getDay()]+' '+pad(d.getDate())+' de '+MONTHS[d.getMonth()].toLowerCase();}
-function fmtH(h){return pad(parseInt(h))+':00';}
+function fmtH(h){var hi=Math.floor(h),m=Math.round((h-hi)*60);return pad(hi)+':'+pad(m);}
 function byId(arr,id){var s=String(id);for(var i=0;i<arr.length;i++)if(String(arr[i].id)===s)return arr[i];return null;}
 function ini(n){var p=n.trim().split(' '),s=p[0][0].toUpperCase();if(p.length>1)s+=p[p.length-1][0].toUpperCase();return s;}
 function avColor(n){var c=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'],h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0x7fffffff;return c[h%c.length];}
@@ -1446,7 +1446,7 @@ function renderS2(){
   if(selSS===null){
     body.appendChild(mkEl('div','slbl2','Hora de inicio'));
     var pills=mkEl('div','pills');
-    for(var h=8;h<20;h++)(function(hr){var p=mkEl('div','pill',fmtH(hr));p.onclick=function(){selSS=hr;selC=null;renderS2();updateStepper();};pills.appendChild(p);})(h);
+    for(var h=7;h<16;h+=0.5)(function(hr){var p=mkEl('div','pill',fmtH(hr));p.onclick=function(){selSS=hr;selC=null;renderS2();updateStepper();};pills.appendChild(p);})(h);
     body.appendChild(pills);
   }else{
     var row=mkEl('div','tprev');
@@ -1455,7 +1455,7 @@ function renderS2(){
     body.appendChild(row);
     body.appendChild(mkEl('div','slbl2','Hora de fin'));
     var pills=mkEl('div','pills');
-    for(var h=selSS+1;h<=20;h++)(function(hr){var p=mkEl('div','pill',fmtH(hr));p.onclick=function(){selSE=hr;selC=null;renderS2();updateStepper();};pills.appendChild(p);})(h);
+    for(var h=selSS+0.5;h<=16;h+=0.5)(function(hr){var p=mkEl('div','pill',fmtH(hr));p.onclick=function(){selSE=hr;selC=null;renderS2();updateStepper();};pills.appendChild(p);})(h);
     body.appendChild(pills);
   }
 }
@@ -2595,7 +2595,7 @@ function publishAviso(){
   var meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var fechaStr=d.getDate()+' '+meses[d.getMonth()]+' '+d.getFullYear();
   setMsg('nav-msg','Publicando...','');
-  apiPost({action:'addAviso',adminId:CU.id,tipo:tipo,titulo:titulo,texto:texto,fecha:fechaStr},function(err,res){
+  apiPost({action:'addAviso',adminId:CU.rol==='admin'?CU.id:'',userId:CU.id,userName:CU.nombre,tipo:tipo,titulo:titulo,texto:texto,fecha:fechaStr},function(err,res){
     if(err||!res.ok){setMsg('nav-msg',res&&res.error||'Error al publicar','err');return;}
     G('nav-titulo').value='';G('nav-texto').value='';
     // Actualizar AVISOS local y re-render
@@ -2631,7 +2631,7 @@ function renderAvisos(){
   pg.appendChild(hero);
 
   // Formulario admin
-  if(CU && CU.rol==='admin'){
+  if(CU){
     var formCard=mkEl('div','card');formCard.style.marginBottom='14px';
     var fch=mkEl('div','ch');fch.innerHTML='<div><h3>✚ Nuevo aviso</h3></div>';formCard.appendChild(fch);
     var fcb=mkEl('div','cb');
