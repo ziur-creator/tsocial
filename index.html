@@ -670,7 +670,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbxg9ROx6K8ym_8vVHd9C96FntoFmjWn15UehKPBR_Au1LgEYS4qmgZf0FoopuyJhzAR/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 var CU=null, RR=[], AU=[];
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -2598,8 +2598,8 @@ function publishAviso(){
   apiPost({action:'addAviso',adminId:CU.rol==='admin'?CU.id:'',userId:CU.id,userName:CU.nombre,tipo:tipo,titulo:titulo,texto:texto,fecha:fechaStr},function(err,res){
     if(err||!res.ok){setMsg('nav-msg',res&&res.error||'Error al publicar','err');return;}
     G('nav-titulo').value='';G('nav-texto').value='';
-    // Actualizar AVISOS local y re-render
-    AVISOS.unshift({id:String(res.id||Date.now()),tipo:tipo,titulo:titulo,texto:texto,fecha:fechaStr});
+    // Actualizar AVISOS local con autor
+    AVISOS.unshift({id:String(res.id||Date.now()),tipo:tipo,titulo:titulo,texto:texto,fecha:fechaStr,userName:CU.nombre,userId:CU.id});
     try{localStorage.setItem('tp_avisos_seen','0');}catch(e){}
     showToast('✓ Aviso publicado','ok');
     renderAvisos();
@@ -2608,7 +2608,7 @@ function publishAviso(){
 
 function deleteAviso(id){
   if(!confirm('¿Eliminar este aviso?'))return;
-  apiPost({action:'deleteAviso',adminId:CU.id,id:id},function(err,res){
+  apiPost({action:'deleteAviso',adminId:CU.rol==='admin'?CU.id:'',userId:CU.id,id:id},function(err,res){
     if(err||!res.ok){showToast(res&&res.error||'Error al eliminar','err');return;}
     AVISOS=AVISOS.filter(function(a){return String(a.id)!==String(id);});
     showToast('Aviso eliminado','ok');
@@ -2686,7 +2686,7 @@ function renderAvisos(){
       }
       body.appendChild(metaEl);
     }
-    if(CU&&CU.rol==='admin'){
+    if(CU&&(CU.rol==='admin'||CU.id===String(a.userId))){
       var del=document.createElement('button');
       del.className='btn btn-danger btn-sm';del.textContent='✕ Eliminar';del.style.marginTop='8px';
       del.setAttribute('data-id', String(a.id));

@@ -169,11 +169,18 @@ function addAviso(p) {
 }
 
 function deleteAviso(p) {
-  if (!isAdmin(p.adminId)) return {ok:false, error:'Sin permiso'};
+  // Admin puede eliminar cualquier aviso; el autor puede eliminar el suyo
   var sheet = getSheet('Avisos');
   if (!sheet) return {ok:false, error:'Sin avisos'};
   var rowIdx = findRowById(sheet, p.id);
   if (rowIdx < 0) return {ok:false, error:'No encontrado'};
+  // Verificar permiso
+  var rows = sheetToObjects(sheet);
+  var aviso = null;
+  for (var i=0; i<rows.length; i++) { if (String(rows[i].id)===String(p.id)) { aviso=rows[i]; break; } }
+  var isAdm = isAdmin(p.adminId);
+  var isOwner = aviso && p.userId && String(aviso.userId)===String(p.userId);
+  if (!isAdm && !isOwner) return {ok:false, error:'Sin permiso'};
   sheet.deleteRow(rowIdx);
   return {ok:true};
 }
