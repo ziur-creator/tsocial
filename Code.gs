@@ -150,7 +150,7 @@ function getAvisos(p) {
   if (!sheet) return {ok:true, avisos:[]};
   var rows = sheetToObjects(sheet);
   var avisos = rows.map(function(r){
-    return {id:String(r.id),tipo:r.tipo||'general',titulo:r.titulo||'',texto:r.texto||'',fecha:r.fecha||''};
+    return {id:String(r.id),tipo:r.tipo||'general',titulo:r.titulo||'',texto:r.texto||'',fecha:r.fecha||'',userName:r.userName||'',userId:r.userId||''};
   });
   return {ok:true, avisos:avisos};
 }
