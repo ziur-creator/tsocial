@@ -174,13 +174,21 @@ function deleteAviso(p) {
   if (!sheet) return {ok:false, error:'Sin avisos'};
   var rowIdx = findRowById(sheet, p.id);
   if (rowIdx < 0) return {ok:false, error:'No encontrado'};
-  // Verificar permiso
-  var rows = sheetToObjects(sheet);
-  var aviso = null;
-  for (var i=0; i<rows.length; i++) { if (String(rows[i].id)===String(p.id)) { aviso=rows[i]; break; } }
+
   var isAdm = isAdmin(p.adminId);
-  var isOwner = aviso && p.userId && String(aviso.userId)===String(p.userId);
-  if (!isAdm && !isOwner) return {ok:false, error:'Sin permiso'};
+
+  if (!isAdm) {
+    if (!p.userId) return {ok:false, error:'Sin permiso'};
+    // Columna G (índice 6, columna 7) = userId
+    var data = sheet.getDataRange().getValues();
+    var avisoUserId = String(data[rowIdx - 1][6] || '');
+    // Si el aviso no tiene userId (aviso viejo sin autor) → permitir
+    // Si tiene userId y no coincide → rechazar
+    if (avisoUserId && avisoUserId !== String(p.userId)) {
+      return {ok:false, error:'Sin permiso'};
+    }
+  }
+
   sheet.deleteRow(rowIdx);
   return {ok:true};
 }
