@@ -1,7 +1,7 @@
 // ============================================================
 //  Turnos Trabajo Social - Hospital Piñeiro GCBA
 //  1. Creá una Google Spreadsheet nueva y copiá su ID aquí:
-var SPREADSHEET_ID = 'TU_SPREADSHEET_ID_AQUI';
+var SPREADSHEET_ID = '1tUGONyh9aNQXJQg4EE6xzWsRwTHk6WAFZvbLdpryno8';
 //     (la ID está en la URL: docs.google.com/spreadsheets/d/ID/edit)
 //  2. Pegá este código en script.google.com → Nuevo proyecto
 //  3. Ejecutá setupSheets() una vez para crear las hojas
