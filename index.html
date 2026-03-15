@@ -26,7 +26,7 @@
 :root{
   --bg:#fdf6f0;--surf:#fff;--surf2:#F3F6F9;
   --ink:#1a1410;--ink2:#6b5a50;--ink3:#a08878;
-  --acc:#FFDB2E;--acc2:#1a6abf;--accL:#FFF8E1;
+  --acc:#1a6abf;--acc2:#0e4d8a;--accL:#e8f0fb;
   --red:#C93B3B;--redL:#fdecea;
   --brd:#e8d8cc;
   --r:14px;--navH:64px;
@@ -37,7 +37,7 @@
   :root{
     --bg:#1a2030;--surf:#222b3a;--surf2:#2e2016;
     --ink:#F3F6F9;--ink2:#c4a882;--ink3:#7a6050;
-    --acc:#FFDB2E;--acc2:#1a6abf;--accL:#FFF8E1;
+    --acc:#1a6abf;--acc2:#0e4d8a;--accL:#e8f0fb;
     --red:#e05555;--redL:#2e1515;
     --brd:#3a2a1e;
   }
@@ -61,7 +61,7 @@ button,input,select,textarea,a{font-family:inherit;font-size:inherit}
 /* HOME PAGE */
 #page-home{max-width:none;padding:0;display:none;flex-direction:column}
 #page-home.on{display:flex;animation:pageIn .18s ease forwards}
-.topbar{background:var(--acc);color:#38485C;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:calc(56px + var(--safeT));padding-top:var(--safeT);flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:50}
+.topbar{background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:calc(56px + var(--safeT));padding-top:var(--safeT);flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:50}
 .logo{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.55);font-size:15px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
 .logo em{color:rgba(255,255,255,0.55);font-style:normal}
 .chip{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.3);border-radius:24px;padding:4px 12px 4px 4px;cursor:pointer;border-style:solid}
@@ -151,7 +151,7 @@ input[type=file]{
 .cday{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:400;border:2px solid transparent;position:relative}
 .cday.pick{cursor:pointer}
 .cday.pick:active{transform:scale(.88)}
-.cday.today{border-color:var(--acc2);color:var(--acc)}
+.cday.today{border-color:var(--acc);background:var(--accL);color:var(--acc);font-weight:800}
 .cday.sel{background:var(--acc);color:#fff;border-color:var(--acc)}
 .cday.past{color:var(--brd)}
 .cday.hres::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--acc2)}
@@ -211,8 +211,8 @@ input[type=file]{
 .ucard-name{font-weight:600;font-size:15px;letter-spacing:.1px}
 .ucard-email{font-size:12px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px}
 .ucard-acts{display:flex;gap:10px;padding:0 15px 14px}
-.ucard-icon-btn{width:42px;height:42px;border-radius:50%;background:rgba(255,219,46,.18);display:flex;align-items:center;justify-content:center;text-decoration:none;flex-shrink:0;transition:transform .15s,opacity .15s,background .15s;color:var(--acc)}
-.ucard-icon-btn:active{background:var(--acc);color:#fff;transform:scale(.88)}
+.ucard-icon-btn{width:42px;height:42px;border-radius:50%;background:rgba(26,106,191,.14);display:flex;align-items:center;justify-content:center;text-decoration:none;flex-shrink:0;transition:transform .15s,opacity .15s,background .15s;color:#1a6abf}
+.ucard-icon-btn:active{background:#1a6abf;color:#fff;transform:scale(.88)}
 .ucard-icon-btn svg{width:20px;height:20px}
 .rbadge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
 .rb-admin{background:#fef3cd;color:#856404}
@@ -251,7 +251,7 @@ input[type=file]{
 .toast.ok{background:var(--acc)}
 .toast.err{background:var(--red)}
 /* PULL TO REFRESH */
-#ptr-indicator{position:fixed;top:0;left:0;right:0;z-index:400;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--acc);color:#fff;font-size:12px;font-weight:700;font-family:'Nunito',sans-serif;letter-spacing:1px;text-transform:uppercase;height:0;overflow:hidden;transition:height .2s ease;padding-top:var(--safeT)}
+#ptr-indicator{position:fixed;top:0;left:0;right:0;z-index:400;display:flex;align-items:center;justify-content:center;gap:8px;background:#1a6abf;color:#fff;font-size:12px;font-weight:700;font-family:'Nunito',sans-serif;letter-spacing:1px;text-transform:uppercase;height:0;overflow:hidden;transition:height .2s ease;padding-top:var(--safeT)}
 #ptr-indicator.pulling{height:calc(44px + var(--safeT))}
 #ptr-indicator.refreshing{height:calc(44px + var(--safeT))}
 #ptr-indicator .ptr-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
@@ -378,13 +378,20 @@ input[type=file]{
 <div id="auth">
   <div class="abrand" id="auth-brand">
     <div class="alogo"><svg width="72" height="72" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Escudo GCBA estilizado -->
-  <rect x="18" y="12" width="64" height="76" rx="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-  <!-- Cruz médica / Ministerio de Salud -->
-  <rect x="44" y="22" width="12" height="36" rx="3" fill="white"/>
-  <rect x="34" y="32" width="32" height="12" rx="3" fill="white"/>
-  <!-- Estrella GCBA inferior -->
-  <path d="M50 64 L52.5 71 L60 71 L54 75.5 L56.5 82.5 L50 78 L43.5 82.5 L46 75.5 L40 71 L47.5 71 Z" fill="rgba(255,255,255,0.85)"/>
+  <!-- Obelisco GCBA estilizado -->
+  <!-- Base -->
+  <rect x="30" y="78" width="40" height="8" rx="2" fill="rgba(255,255,255,0.9)"/>
+  <!-- Cuerpo obelisco -->
+  <path d="M42 78 L44 30 L50 18 L56 30 L58 78 Z" fill="rgba(255,255,255,0.95)"/>
+  <!-- Franja amarilla GCBA -->
+  <rect x="42" y="58" width="16" height="4" rx="1" fill="#FFDB2E"/>
+  <!-- Estrella superior -->
+  <path d="M50 6 L51.5 11 L57 11 L52.5 14 L54 19 L50 16 L46 19 L47.5 14 L43 11 L48.5 11 Z" fill="#FFDB2E"/>
+  <!-- Cruz salud costados -->
+  <rect x="20" y="52" width="14" height="6" rx="2" fill="rgba(255,255,255,0.7)"/>
+  <rect x="66" y="52" width="14" height="6" rx="2" fill="rgba(255,255,255,0.7)"/>
+  <rect x="24" y="48" width="6" height="14" rx="2" fill="rgba(255,255,255,0.7)"/>
+  <rect x="70" y="48" width="6" height="14" rx="2" fill="rgba(255,255,255,0.7)"/>
 </svg><div class="alogo-text">TRABAJO <em>SOCIAL</em><span>HOSPITAL PIÑEIRO · GCBA</span></div></div>
     <div class="asub">Reserva de Consultorios</div>
   </div>
@@ -441,11 +448,11 @@ input[type=file]{
 <div id="app">
   <div class="topbar">
     <div class="logo" onclick="showPage('avisos')" style="cursor:pointer"><svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="12" y="8" width="76" height="84" rx="8" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
-  <rect x="44" y="18" width="12" height="36" rx="3" fill="white"/>
-  <rect x="30" y="30" width="40" height="12" rx="3" fill="white"/>
-  <path d="M50 60 L52 66 L58 66 L53 70 L55 76 L50 72 L45 76 L47 70 L42 66 L48 66 Z" fill="rgba(255,255,255,0.9)"/>
-</svg><span style="position:relative;font-size:13px;letter-spacing:.5px">T. <em style="position:relative">SOCIAL<span class="avisos-badge" id="avisos-dot"></span></em></span></div>
+  <rect x="30" y="80" width="40" height="8" rx="2" fill="rgba(255,255,255,0.9)"/>
+  <path d="M42 80 L44 32 L50 20 L56 32 L58 80 Z" fill="rgba(255,255,255,0.95)"/>
+  <rect x="42" y="60" width="16" height="4" rx="1" fill="#FFDB2E"/>
+  <path d="M50 8 L51.5 13 L57 13 L52.5 16 L54 21 L50 18 L46 21 L47.5 16 L43 13 L48.5 13 Z" fill="#FFDB2E"/>
+</svg><span style="position:relative;font-size:11px;letter-spacing:.3px;font-weight:700">TRABAJO SOCIAL <em style="position:relative;font-weight:800">PIÑEIRO<span class="avisos-badge" id="avisos-dot"></span></em></span></div>
     <button class="chip" onclick="openLogout()">
       <div class="chip-av" id="chip-av"></div>
       <span class="chip-name" id="chip-name"></span>
@@ -493,7 +500,7 @@ input[type=file]{
           <div class="cbar-title" id="cbar-title"></div>
           <div class="cbar-sub" id="cbar-sub"></div>
           <div id="cbar-user-wrap" style="display:none;margin-top:8px">
-            <select id="cbar-user" style="width:100%;padding:6px 10px;border-radius:8px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-family:inherit;-webkit-appearance:none;outline:none">
+            <select id="cbar-user" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.95);color:#38485C;font-size:13px;font-family:inherit;-webkit-appearance:none;outline:none;font-weight:600">
             </select>
           </div>
         </div>
@@ -652,7 +659,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbxPbbY4HQvcD8u0VVMu7oExRHq_5lZKlAERgjdZA3_RUOXRpOYvKR0df0Tm4aoklEFkug/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 var CU=null, RR=[], AU=[];
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -664,7 +671,7 @@ var photoReg='',photoEc='';
 var MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 var DOWS=['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
 var DU=[
-  {id:'u0',nombre:'Administrador',email:'admin@integra.com',pw:hw('admin123'),rol:'admin',tel:'',foto:'',verified:true},
+  {id:'u0',nombre:'Administrador',email:'admin@pineiro.gob.ar',pw:hw('admin123'),rol:'admin',tel:'',foto:'',verified:true},
   {id:'u1',nombre:'Dr. García',email:'garcia@demo.com',pw:hw('123456'),rol:'user',tel:'+5491111111111',foto:'',verified:true},
   {id:'u2',nombre:'Dra. Martínez',email:'martinez@demo.com',pw:hw('123456'),rol:'user',tel:'+5491122222222',foto:'',verified:true},
   {id:'u3',nombre:'Dr. Rodríguez',email:'rodriguez@demo.com',pw:hw('123456'),rol:'user',tel:'+5491133333333',foto:'',verified:true},
