@@ -670,7 +670,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbxMTVRyoVh4iKxSHANbcXdrTH5C936IFCMKOW-WmWtlqjtj01WRue1TnVpLYF8SrPQF/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 var CU=null, RR=[], AU=[];
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -1926,9 +1926,15 @@ function saveEditConsul(){
     // Actualizar CS local inmediatamente
     var c=byId(CS,id);
     if(c){c.name=nombre;c.descripcion=desc;if(res.foto!==undefined)c.foto=res.foto;else if(photoEc)c.foto=photoEc;}
-    // En modo demo, actualizar también apiDemo CS
-    if(isDemo()){var cd=byId(CS,id);if(cd){cd.name=nombre;cd.descripcion=desc;cd.foto=photoEc;}}
-    closeModal('modal-ec');showToast('✓ Consultorio actualizado','ok');loadRR(loadAdmin);
+    closeModal('modal-ec');
+    showToast('✓ Consultorio actualizado','ok');
+    // Recargar consultorios desde el servidor para sincronizar
+    api({action:'getConsultorios'},function(err2,res2){
+      if(!err2&&res2&&res2.ok&&res2.consultorios){
+        CS=res2.consultorios.map(function(c){return{id:String(c.id),name:c.nombre||c.name,color:c.color||'#1a6abf',foto:c.foto||'',descripcion:c.descripcion||''};});
+      }
+      loadAdmin();
+    });
   });
 }
 
