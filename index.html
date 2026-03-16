@@ -670,7 +670,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbzB8rRz94Ihz4aracFRTmmiDOv941ywQhkaV-EUlTCat3Mt-o6IDUNc5QTt2bdwBrLQ/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 var CU=null, RR=[], AU=[];
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -2071,6 +2071,12 @@ function updateRepeatPreview(){
   var type = G('rpt-type').value;
   var count = parseInt(G('rpt-count').value);
   var dates = getRepeatDates(repeatSource.fecha, type, count);
+
+  // Si viene del flujo de reserva nueva, incluir la fecha base
+  if(repeatSource._isNew){
+    dates = [repeatSource.fecha].concat(dates);
+  }
+
   var prev = G('rpt-preview');
   var blocked = [], conflictos = [], ok = [];
   dates.forEach(function(d){
@@ -2110,6 +2116,12 @@ function doRepeat(){
   var type = G('rpt-type').value;
   var count = parseInt(G('rpt-count').value);
   var dates = getRepeatDates(repeatSource.fecha, type, count);
+
+  // Si viene del flujo de reserva nueva, incluir la fecha base como primera
+  if(repeatSource._isNew){
+    dates = [repeatSource.fecha].concat(dates);
+  }
+
   var toCreate = dates.filter(function(d){
     return !isBlocked(d) && !conflict_any(repeatSource.consulId, d, repeatSource.startH, repeatSource.endH);
   });
