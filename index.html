@@ -670,7 +670,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbzB8rRz94Ihz4aracFRTmmiDOv941ywQhkaV-EUlTCat3Mt-o6IDUNc5QTt2bdwBrLQ/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 var CU=null, RR=[], AU=[];
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -1958,32 +1958,59 @@ function openBlockModal(){
   openModal('modal-block');
 }
 
+function saveBlocked(){
+  try{localStorage.setItem('tp_blocked', JSON.stringify(BLOCKED));}catch(e){}
+}
+function loadBlocked(){
+  try{var s=localStorage.getItem('tp_blocked');if(s)BLOCKED=JSON.parse(s)||[];}catch(e){}
+  // En producción, recargar desde servidor
+  if(!isDemo()){
+    api({action:'getBlocked'},function(err,res){
+      if(!err&&res&&res.ok&&res.blocked){
+        BLOCKED=res.blocked;
+        try{localStorage.setItem('tp_blocked',JSON.stringify(BLOCKED));}catch(e){}
+        renderCal();
+      }
+    });
+  }
+}
+
 function addBlock(){
   var date = G('blk-date').value;
   var reason = (G('blk-reason').value||'').trim();
   if(!date){setMsg('blk-msg','Elegí una fecha','err');return;}
   if(isBlocked(date)){setMsg('blk-msg','Esa fecha ya está bloqueada','err');return;}
 
-  // Cancelar todas las reservas de esa fecha
+  function doBlock(){
+    if(!isDemo()){
+      api({action:'addBlocked',adminId:CU.id,date:date,reason:reason||'Bloqueado'},function(err,res){
+        if(err||!res.ok){setMsg('blk-msg',res&&res.error||'Error al bloquear','err');return;}
+        BLOCKED.push({date:date,reason:reason||'Bloqueado'});
+        saveBlocked();renderBlockList();renderCal();
+        setMsg('blk-msg','✓ Fecha bloqueada','ok');
+        G('blk-date').value=today();G('blk-reason').value='';
+      });
+    } else {
+      BLOCKED.push({date:date,reason:reason||'Bloqueado'});
+      saveBlocked();renderBlockList();renderCal();
+      setMsg('blk-msg','✓ Fecha bloqueada','ok');
+      G('blk-date').value=today();G('blk-reason').value='';
+    }
+  }
+
+  // Cancelar reservas del día primero
   var reservasDelDia = RR.filter(function(r){return r.fecha===date;});
   var canceladas = 0;
   function cancelNext(idx){
     if(idx>=reservasDelDia.length){
-      // Todas canceladas — guardar bloqueo
       RR = RR.filter(function(r){return r.fecha!==date;});
-      BLOCKED.push({date:date, reason:reason||'Bloqueado'});
-      saveBlocked();
-      renderBlockList();
-      renderCal();
       var msg = '✓ Fecha bloqueada';
       if(canceladas>0) msg += ' · '+canceladas+' reserva'+(canceladas>1?'s':'')+' cancelada'+(canceladas>1?'s':'');
-      setMsg('blk-msg', msg, 'ok');
-      G('blk-date').value = today();
-      G('blk-reason').value = '';
+      doBlock();
       return;
     }
     var r = reservasDelDia[idx];
-    api({action:'adminCancelReservation', adminId:CU.id, id:r.id}, function(err,res){
+    api({action:'adminCancelReservation',adminId:CU.id,id:r.id},function(err,res){
       if(res&&res.ok) canceladas++;
       cancelNext(idx+1);
     });
@@ -1992,29 +2019,23 @@ function addBlock(){
     setMsg('blk-msg','Cancelando '+reservasDelDia.length+' reserva(s)...','');
     cancelNext(0);
   } else {
-    BLOCKED.push({date:date, reason:reason||'Bloqueado'});
-    saveBlocked();
-    renderBlockList();
-    renderCal();
-    setMsg('blk-msg','✓ Fecha bloqueada','ok');
-    G('blk-date').value = today();
-    G('blk-reason').value = '';
+    doBlock();
   }
 }
 
 function removeBlock(date){
-  BLOCKED = BLOCKED.filter(function(b){return b.date!==date;});
-  saveBlocked();
-  renderBlockList();
-  renderCal();
-  showToast('Bloqueo eliminado','ok');
-}
-
-function saveBlocked(){
-  try{localStorage.setItem('im_blocked', JSON.stringify(BLOCKED));}catch(e){}
-}
-function loadBlocked(){
-  try{var s=localStorage.getItem('im_blocked');if(s)BLOCKED=JSON.parse(s)||[];}catch(e){}
+  if(!isDemo()){
+    api({action:'removeBlocked',adminId:CU.id,date:date},function(err,res){
+      if(err||!res.ok){showToast(res&&res.error||'Error','err');return;}
+      BLOCKED = BLOCKED.filter(function(b){return b.date!==date;});
+      saveBlocked();renderBlockList();renderCal();
+      showToast('Bloqueo eliminado','ok');
+    });
+  } else {
+    BLOCKED = BLOCKED.filter(function(b){return b.date!==date;});
+    saveBlocked();renderBlockList();renderCal();
+    showToast('Bloqueo eliminado','ok');
+  }
 }
 
 function renderBlockList(){
