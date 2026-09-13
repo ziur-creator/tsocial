@@ -514,6 +514,9 @@ input[type=file]{
             <select id="cbar-user" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.95);color:#38485C;font-size:13px;font-family:inherit;-webkit-appearance:none;outline:none;font-weight:600">
             </select>
           </div>
+          <div style="margin-top:8px">
+            <input type="text" id="cbar-paciente" placeholder="👤 Nombre del paciente (opcional)" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.95);color:#38485C;font-size:13px;font-family:inherit;outline:none">
+          </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
           <button class="btn btn-ow btn-sm" onclick="cancelBooking()">✕</button>
@@ -583,6 +586,7 @@ input[type=file]{
         <option value="12">12 veces más</option>
       </select>
     </div>
+    <div class="fld"><label>Paciente (opcional)</label><input type="text" id="rpt-paciente" placeholder="Nombre del paciente"></div>
     <div id="rpt-preview" style="background:var(--surf2);border-radius:10px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:var(--ink2)"></div>
     <div id="rpt-msg"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
@@ -608,6 +612,41 @@ input[type=file]{
   </div>
 </div>
 
+
+<!-- MODAL PACIENTE DE UNA RESERVA -->
+<div class="modal-ov hide" id="modal-rp" onclick="if(event.target===this)closeModal('modal-rp')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Paciente del turno</div>
+    <p style="font-size:13px;color:var(--ink2);margin-bottom:14px" id="rp-desc"></p>
+    <input type="hidden" id="rp-rid">
+    <div class="fld"><label>Paciente</label><input type="text" id="rp-paciente" placeholder="Nombre del paciente"></div>
+    <div id="rp-msg"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-ghost btn-full" onclick="closeModal('modal-rp')">Cancelar</button>
+      <button class="btn btn-pri btn-full" onclick="saveReservaPaciente()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGENDA DE PACIENTE (sin consultorio) -->
+<div class="modal-ov hide" id="modal-ap" onclick="if(event.target===this)closeModal('modal-ap')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Turno de paciente</div>
+    <p style="font-size:13px;color:var(--ink2);margin-bottom:14px">Anotá un turno con un paciente, reserves o no un consultorio.</p>
+    <input type="hidden" id="ap-id">
+    <div class="fld"><label>Fecha</label><input type="date" id="ap-fecha"></div>
+    <div class="fld"><label>Hora</label><input type="time" id="ap-hora"></div>
+    <div class="fld"><label>Paciente</label><input type="text" id="ap-paciente" placeholder="Nombre del paciente"></div>
+    <div class="fld"><label>Notas (opcional)</label><input type="text" id="ap-notas" placeholder="Motivo, observaciones..."></div>
+    <div id="ap-msg"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-ghost btn-full" onclick="closeModal('modal-ap')">Cancelar</button>
+      <button class="btn btn-pri btn-full" onclick="saveAgendaPaciente()">Guardar</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-ov hide" id="modal-logout" onclick="if(event.target===this)closeModal('modal-logout')">
   <div class="modal-sheet">
@@ -670,9 +709,9 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'https://script.google.com/macros/s/AKfycbw2PFRVPd_0w4wqcngxgahgpumPXsjtLnkvC3l6DrzvUDMKr2t2z1CFNMH6CHLTcKo3/exec';
+var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
-var CU=null, RR=[], AU=[];
+var CU=null, RR=[], AU=[], AP=[]; // AP = agenda personal de pacientes (independiente de reservas)
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
 var CS=[];
 (function(){ CS.push({id:'1',name:'Consultorio A',color:'#1a6abf',foto:'',descripcion:'Planta baja - Servicio de Trabajo Social'});
@@ -691,6 +730,7 @@ var DU=[
   {id:'u6',nombre:'Dra. Sánchez',email:'sanchez@demo.com',pw:hw('123456'),rol:'user',tel:'+5491166666666',foto:'',verified:true}
 ];
 var DR=[];
+var DAP=[]; // demo: agenda personal de pacientes
 
 function G(id){return document.getElementById(id);}
 function pad(n){return n<10?'0'+n:String(n);}
@@ -852,6 +892,16 @@ function loadDR(){
   }catch(e){}
   return false;
 }
+function saveDAP(){
+  try{localStorage.setItem('tp_dap',JSON.stringify(DAP));}catch(e){}
+}
+function loadDAP(){
+  try{
+    var s=localStorage.getItem('tp_dap');
+    if(s){DAP=JSON.parse(s);return true;}
+  }catch(e){}
+  return false;
+}
 function initDR(){
   if(loadDR()) return; // usar datos guardados si existen
   var t=today();
@@ -913,7 +963,7 @@ function apiDemo(p,cb){
     if(p.action==='addReservation'){
       var sH=parseInt(p.startH),eH=parseInt(p.endH),cId=String(p.consulId);
       for(i=0;i<DR.length;i++){r=DR[i];if(r.consulId===cId&&r.fecha===p.fecha&&!(eH<=r.startH||sH>=r.endH))return cb(null,{ok:false,error:'El consultorio ya está reservado en ese horario'});if(String(r.userId)===String(p.userId)&&r.fecha===p.fecha&&!(eH<=r.startH||sH>=r.endH))return cb(null,{ok:false,error:'Ya tenés una reserva en ese horario. No podés reservar dos consultorios al mismo tiempo'});}
-      var nid='r'+Date.now();DR.push({id:nid,consulId:cId,fecha:p.fecha,startH:sH,endH:eH,userId:String(p.userId),userName:p.userName||''});
+      var nid='r'+Date.now();DR.push({id:nid,consulId:cId,fecha:p.fecha,startH:sH,endH:eH,userId:String(p.userId),userName:p.userName||'',paciente:p.paciente||''});
       saveDR();
       return cb(null,{ok:true,id:nid});
     }
@@ -930,11 +980,51 @@ function apiDemo(p,cb){
         }
         if(conflicto){errores.push(fd);continue;}
         var bid='r'+Date.now()+fi;
-        DR.push({id:bid,consulId:cId,fecha:fd,startH:sH,endH:eH,userId:String(p.userId),userName:p.userName||''});
+        DR.push({id:bid,consulId:cId,fecha:fd,startH:sH,endH:eH,userId:String(p.userId),userName:p.userName||'',paciente:p.paciente||''});
         creadas.push(fd);
       }
       saveDR();
       return cb(null,{ok:true,creadas:creadas,errores:errores});
+    }
+    if(p.action==='updateReservaPaciente'){
+      var rid=String(p.id);
+      for(i=0;i<DR.length;i++)if(DR[i].id===rid){
+        var isOwn=DR[i].userId===String(p.userId);
+        var isAdm=CU&&CU.rol==='admin'&&String(CU.id)===String(p.adminId);
+        if(!isOwn&&!isAdm)return cb(null,{ok:false,error:'Sin permiso'});
+        DR[i].paciente=p.paciente||'';saveDR();return cb(null,{ok:true});
+      }
+      return cb(null,{ok:false,error:'Reserva no encontrada'});
+    }
+    if(p.action==='getAgendaPacientes'){
+      var mine=DAP.filter(function(a){return String(a.userId)===String(p.userId);});
+      mine.sort(function(x,y){return x.fecha!==y.fecha?(x.fecha<y.fecha?-1:1):String(x.hora).localeCompare(String(y.hora));});
+      return cb(null,{ok:true,agenda:JSON.parse(JSON.stringify(mine))});
+    }
+    if(p.action==='addAgendaPaciente'){
+      if(!p.fecha||!p.hora||!p.paciente)return cb(null,{ok:false,error:'Faltan datos (fecha, hora y paciente son obligatorios)'});
+      var naid='ap'+Date.now();
+      DAP.push({id:naid,userId:String(p.userId),userName:p.userName||'',fecha:p.fecha,hora:p.hora,paciente:p.paciente,notas:p.notas||''});
+      saveDAP();
+      return cb(null,{ok:true,id:naid});
+    }
+    if(p.action==='updateAgendaPaciente'){
+      var aid=String(p.id);
+      for(i=0;i<DAP.length;i++)if(DAP[i].id===aid){
+        if(DAP[i].userId!==String(p.userId))return cb(null,{ok:false,error:'Sin permiso'});
+        if(p.fecha)DAP[i].fecha=p.fecha;if(p.hora)DAP[i].hora=p.hora;
+        if(p.paciente)DAP[i].paciente=p.paciente;if(p.notas!==undefined)DAP[i].notas=p.notas;
+        saveDAP();return cb(null,{ok:true});
+      }
+      return cb(null,{ok:false,error:'No encontrado'});
+    }
+    if(p.action==='deleteAgendaPaciente'){
+      var aid2=String(p.id);
+      for(i=0;i<DAP.length;i++)if(DAP[i].id===aid2){
+        if(DAP[i].userId!==String(p.userId))return cb(null,{ok:false,error:'Sin permiso'});
+        DAP.splice(i,1);saveDAP();return cb(null,{ok:true});
+      }
+      return cb(null,{ok:false,error:'No encontrado'});
     }
     if(p.action==='cancelReservation'){
       var rid=String(p.id),uid=String(p.userId);
@@ -1130,6 +1220,7 @@ function startSession(user){
   calvWeekStart=getWeekStart(today());
   loadBlocked(function(){
     initDR();
+    loadDAP();
     loadRR(function(){renderCal();updateStepper();showPage('home');updateMRBadge();});
   });
   if(user.rol==='admin'){
@@ -1321,7 +1412,7 @@ function showPage(name){
     if(nb)nb.className='ni'+(p===name?' on':'');
   });
   G('pcontent').scrollTop=0;
-  if(name==='misreservas')loadRR(renderMR);
+  if(name==='misreservas')loadRR(function(){loadAP(renderMR);});
   if(name==='agenda'){
     loadRR(function(){
       renderAgenda();
@@ -1351,8 +1442,18 @@ function showPage(name){
 function loadRR(cb){
   apiPost({action:'getReservations'},function(err,res){
     if(err||!res.ok){if(cb)cb();return;}
-    RR=(res.reservations||[]).map(function(r){return{id:String(r.id),consulId:String(r.consulId),fecha:String(r.fecha),startH:parseInt(r.startH),endH:parseInt(r.endH),userId:String(r.userId),userName:r.userName||''};});
+    RR=(res.reservations||[]).map(function(r){return{id:String(r.id),consulId:String(r.consulId),fecha:String(r.fecha),startH:parseInt(r.startH),endH:parseInt(r.endH),userId:String(r.userId),userName:r.userName||'',paciente:r.paciente||''};});
     if(res.consultorios&&res.consultorios.length)CS=res.consultorios.map(function(c){return{id:String(c.id),name:c.nombre||c.name,color:c.color||'#1a6abf',foto:c.foto||'',descripcion:c.descripcion||''};});
+    if(cb)cb();
+  });
+}
+
+/* AGENDA PERSONAL DE PACIENTES (independiente de las reservas de consultorio) */
+function loadAP(cb){
+  if(!CU){if(cb)cb();return;}
+  api({action:'getAgendaPacientes',userId:CU.id},function(err,res){
+    if(err||!res.ok){AP=[];if(cb)cb();return;}
+    AP=(res.agenda||[]).map(function(a){return{id:String(a.id),userId:String(a.userId),userName:a.userName||'',fecha:String(a.fecha),hora:String(a.hora),paciente:a.paciente||'',notas:a.notas||''};});
     if(cb)cb();
   });
 }
@@ -1545,6 +1646,7 @@ function pickConsul(c){
     wrap.style.display='none';
     selUser=CU;
   }
+  var cbp=G('cbar-paciente');if(cbp)cbp.value='';
   G('cbar').style.display='flex';
   setTimeout(function(){G('cbar').scrollIntoView({behavior:'smooth',block:'nearest'});},80);
 }
@@ -1556,12 +1658,13 @@ function confirmBooking(){
   if(userConflict(bookUser.id,selDate,selSS,selSE)){showToast(bookUser.id===CU.id?'Ya tenés una reserva en ese horario':bookUser.nombre+' ya tiene una reserva en ese horario','err');renderS3();return;}
   var btn=G('confirm-btn');btn.textContent='Guardando...';btn.disabled=true;
   var savedName=selC.name;
-  apiPost({action:'addReservation',userId:bookUser.id,userName:bookUser.nombre,consulId:selC.id,fecha:selDate,startH:selSS,endH:selSE},function(err,res){
+  var paciente=(G('cbar-paciente')&&G('cbar-paciente').value||'').trim();
+  apiPost({action:'addReservation',userId:bookUser.id,userName:bookUser.nombre,consulId:selC.id,fecha:selDate,startH:selSS,endH:selSE,paciente:paciente},function(err,res){
     btn.textContent='✓ Confirmar';btn.disabled=false;
     if(err||!res.ok){showToast(res&&res.error||'Error','err');return;}
-    RR.push({id:String(res.id),consulId:selC.id,fecha:selDate,startH:selSS,endH:selSE,userId:bookUser.id,userName:bookUser.nombre});
+    RR.push({id:String(res.id),consulId:selC.id,fecha:selDate,startH:selSS,endH:selSE,userId:bookUser.id,userName:bookUser.nombre,paciente:paciente});
     updateMRBadge();
-    showToast('✓ Reserva confirmada: '+savedName+(bookUser.id!==CU.id?' para '+bookUser.nombre:''),'ok');
+    showToast('✓ Reserva confirmada: '+savedName+(paciente?' · '+paciente:'')+(bookUser.id!==CU.id?' para '+bookUser.nombre:''),'ok');
     resetAll();
   });
 }
@@ -1577,41 +1680,140 @@ function resetAll(){
 }
 
 /* MIS TURNOS */
+function horaToNum(hstr){
+  var p=String(hstr||'0:0').split(':');
+  return parseInt(p[0]||0)+ (parseInt(p[1]||0)/60);
+}
 function renderMR(){
   var cnt=G('mr-content');cnt.innerHTML='';
   var tod=today();
   var myR=RR.filter(function(r){return r.userId===CU.id;});
-  myR.sort(function(a,b){return a.fecha<b.fecha?-1:a.fecha>b.fecha?1:a.startH-b.startH;});
-  var up=myR.filter(function(r){return r.fecha>=tod;});
-  var past=myR.filter(function(r){return r.fecha<tod;});
+  var myA=AP.slice(); // AP ya viene filtrada por usuario desde el backend
+
+  // Unificar reservas + turnos de paciente sin consultorio en una sola línea de tiempo
+  var items=[];
+  myR.forEach(function(r){items.push({type:'reserva',fecha:r.fecha,horaNum:r.startH,data:r});});
+  myA.forEach(function(a){items.push({type:'paciente',fecha:a.fecha,horaNum:horaToNum(a.hora),data:a});});
+  items.sort(function(x,y){return x.fecha<y.fecha?-1:x.fecha>y.fecha?1:x.horaNum-y.horaNum;});
+  var up=items.filter(function(it){return it.fecha>=tod;});
+  var past=items.filter(function(it){return it.fecha<tod;});
+
   var hdr=mkEl('div');
   hdr.style.cssText='display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(80,40,10,.10);padding:14px;margin-bottom:12px';
   hdr.appendChild(mkAv(CU.nombre,CU.foto,46));
-  var hi=mkEl('div');hi.innerHTML='<div style="font-size:16px;font-weight:700">'+CU.nombre+'</div><div style="font-size:12px;color:var(--ink3)">'+up.length+' próximas · '+past.length+' anteriores</div>';
+  var hi=mkEl('div');hi.innerHTML='<div style="font-size:16px;font-weight:700">'+CU.nombre+'</div><div style="font-size:12px;color:var(--ink3)">'+up.length+' próximos · '+past.length+' anteriores</div>';
   hdr.appendChild(hi);cnt.appendChild(hdr);
-  if(!myR.length){var e=mkEl('div','empty');e.innerHTML='<div class="ei">📋</div><h3>Sin reservas</h3><p>Reservá desde la pestaña Reservar.</p>';cnt.appendChild(e);return;}
+
+  cnt.appendChild(mkBtn('btn btn-ghost btn-full','👤 + Agregar turno de paciente (sin consultorio)',function(){openAddPaciente();}));
+  var spacer=mkEl('div');spacer.style.height='10px';cnt.appendChild(spacer);
+
+  if(!items.length){var e=mkEl('div','empty');e.innerHTML='<div class="ei">📋</div><h3>Sin turnos</h3><p>Reservá un consultorio o agregá un turno de paciente.</p>';cnt.appendChild(e);return;}
+
   function makeRCard(r,canCancel){
     var c=byId(CS,r.consulId),cname=c?c.name:'Consultorio '+r.consulId,ccolor=c?c.color:'#999';
     var card=mkEl('div','rcard');card.style.borderColor=ccolor;
     var info=mkEl('div');
-    info.innerHTML='<div class="rtitle">'+cname+'</div><div class="rmeta"><span>📅 '+fmtDate(r.fecha)+(r.fecha===tod?' <strong style="color:var(--acc)">HOY</strong>':'')+'</span><span>🕐 '+fmtH(r.startH)+'–'+fmtH(r.endH)+'</span><span>⏱ '+(r.endH-r.startH)+'h</span></div>';
+    info.innerHTML='<div class="rtitle">'+cname+'</div><div class="rmeta"><span>📅 '+fmtDate(r.fecha)+(r.fecha===tod?' <strong style="color:var(--acc)">HOY</strong>':'')+'</span><span>🕐 '+fmtH(r.startH)+'–'+fmtH(r.endH)+'</span><span>⏱ '+(r.endH-r.startH)+'h</span></div>'
+      +(r.paciente?'<div class="rmeta" style="margin-top:3px"><span>👤 '+r.paciente+'</span></div>':'');
     card.appendChild(info);
+    var acts=mkEl('div');acts.style.cssText='display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap';
+    (function(rid,pac){acts.appendChild(mkBtn('btn btn-ghost btn-sm','✎ Paciente',function(){openEditReservaPaciente(rid,cname,r.fecha,r.startH,r.endH,pac);}));})(r.id,r.paciente||'');
     if(canCancel){
-      var acts=mkEl('div');acts.style.cssText='display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap';
       (function(rid){acts.appendChild(mkBtn('btn btn-ghost btn-sm','↻ Repetir',function(){openRepeat(rid);}));})(r.id);
       (function(rid){acts.appendChild(mkBtn('btn btn-danger btn-sm','✕',function(){
         if(!confirm('¿Cancelar esta reserva?'))return;
         api({action:'cancelReservation',id:rid,userId:CU.id},function(err,res){
           if(err||!res.ok){showToast(res&&res.error||'Error','err');return;}
-          loadRR(renderMR);renderCal();showToast('Reserva cancelada','ok');
+          loadRR(function(){renderMR();});renderCal();showToast('Reserva cancelada','ok');
         });
       }));})(r.id);
+    }
+    card.appendChild(acts);
+    return card;
+  }
+
+  function makeACard(a,canEdit){
+    var card=mkEl('div','rcard');card.style.borderColor='#a08878';
+    var info=mkEl('div');
+    info.innerHTML='<div class="rtitle">👤 '+a.paciente+'</div><div class="rmeta"><span>📅 '+fmtDate(a.fecha)+(a.fecha===tod?' <strong style="color:var(--acc)">HOY</strong>':'')+'</span><span>🕐 '+a.hora+'</span><span class="badge badge-gray">Sin consultorio</span></div>'
+      +(a.notas?'<div class="rmeta" style="margin-top:3px;color:var(--ink3)"><span>📝 '+a.notas+'</span></div>':'');
+    card.appendChild(info);
+    if(canEdit){
+      var acts=mkEl('div');acts.style.cssText='display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap';
+      (function(entry){acts.appendChild(mkBtn('btn btn-ghost btn-sm','✎',function(){openAddPaciente(entry);}));})(a);
+      (function(aid){acts.appendChild(mkBtn('btn btn-danger btn-sm','✕',function(){
+        if(!confirm('¿Eliminar este turno de paciente?'))return;
+        api({action:'deleteAgendaPaciente',id:aid,userId:CU.id},function(err,res){
+          if(err||!res.ok){showToast(res&&res.error||'Error','err');return;}
+          AP=AP.filter(function(x){return x.id!==aid;});
+          renderMR();showToast('Turno eliminado','ok');
+        });
+      }));})(a.id);
       card.appendChild(acts);
     }
     return card;
   }
-  if(up.length){cnt.appendChild(mkEl('div','sec-title','Próximas reservas'));up.forEach(function(r){cnt.appendChild(makeRCard(r,true));});}
-  if(past.length){var t=mkEl('div','sec-title','Historial');t.style.marginTop='16px';cnt.appendChild(t);var w=mkEl('div');w.style.opacity='.55';past.forEach(function(r){w.appendChild(makeRCard(r,false));});cnt.appendChild(w);}
+
+  function renderItem(it,canEdit){
+    return it.type==='reserva' ? makeRCard(it.data,canEdit) : makeACard(it.data,canEdit);
+  }
+
+  if(up.length){cnt.appendChild(mkEl('div','sec-title','Próximos turnos'));up.forEach(function(it){cnt.appendChild(renderItem(it,true));});}
+  if(past.length){var t=mkEl('div','sec-title','Historial');t.style.marginTop='16px';cnt.appendChild(t);var w=mkEl('div');w.style.opacity='.55';past.forEach(function(it){w.appendChild(renderItem(it,false));});cnt.appendChild(w);}
+}
+
+/* Editar paciente de una reserva de consultorio ya creada */
+function openEditReservaPaciente(rid,cname,fecha,sH,eH,paciente){
+  G('rp-rid').value=rid;
+  G('rp-desc').textContent=cname+' · '+fmtDate(fecha)+' · '+fmtH(sH)+'–'+fmtH(eH);
+  G('rp-paciente').value=paciente||'';
+  setMsg('rp-msg','');
+  openModal('modal-rp');
+}
+function saveReservaPaciente(){
+  var rid=G('rp-rid').value;
+  var paciente=(G('rp-paciente').value||'').trim();
+  setMsg('rp-msg','Guardando...','');
+  api({action:'updateReservaPaciente',id:rid,userId:CU.id,adminId:CU.rol==='admin'?CU.id:'',paciente:paciente},function(err,res){
+    if(err||!res.ok){setMsg('rp-msg',res&&res.error||'Error','err');return;}
+    var r=byId(RR,rid);if(r)r.paciente=paciente;
+    closeModal('modal-rp');
+    renderMR();
+    showToast('✓ Paciente actualizado','ok');
+  });
+}
+
+/* Agenda personal de pacientes: agregar / editar turno sin consultorio */
+function openAddPaciente(entry){
+  G('ap-id').value=entry?entry.id:'';
+  G('ap-fecha').value=entry?entry.fecha:today();
+  G('ap-hora').value=entry?entry.hora:'';
+  G('ap-paciente').value=entry?entry.paciente:'';
+  G('ap-notas').value=entry?(entry.notas||''):'';
+  setMsg('ap-msg','');
+  openModal('modal-ap');
+}
+function saveAgendaPaciente(){
+  var id=G('ap-id').value;
+  var fecha=G('ap-fecha').value;
+  var hora=G('ap-hora').value;
+  var paciente=(G('ap-paciente').value||'').trim();
+  var notas=(G('ap-notas').value||'').trim();
+  if(!fecha||!hora||!paciente){setMsg('ap-msg','Completá fecha, hora y paciente','err');return;}
+  setMsg('ap-msg','Guardando...','');
+  if(id){
+    api({action:'updateAgendaPaciente',id:id,userId:CU.id,fecha:fecha,hora:hora,paciente:paciente,notas:notas},function(err,res){
+      if(err||!res.ok){setMsg('ap-msg',res&&res.error||'Error','err');return;}
+      var a=byId(AP,id);if(a){a.fecha=fecha;a.hora=hora;a.paciente=paciente;a.notas=notas;}
+      closeModal('modal-ap');renderMR();showToast('✓ Turno actualizado','ok');
+    });
+  } else {
+    api({action:'addAgendaPaciente',userId:CU.id,userName:CU.nombre,fecha:fecha,hora:hora,paciente:paciente,notas:notas},function(err,res){
+      if(err||!res.ok){setMsg('ap-msg',res&&res.error||'Error','err');return;}
+      AP.push({id:String(res.id),userId:String(CU.id),userName:CU.nombre,fecha:fecha,hora:hora,paciente:paciente,notas:notas});
+      closeModal('modal-ap');renderMR();showToast('✓ Turno de paciente agregado','ok');
+    });
+  }
 }
 
 /* AGENDA */
@@ -2069,6 +2271,7 @@ function openRepeat(rid){
   var c = byId(CS, r.consulId);
   G('rpt-rid').value = rid;
   G('rpt-desc').textContent = (c?c.name:'Consultorio '+r.consulId) + ' · ' + fmtH(r.startH) + '–' + fmtH(r.endH) + ' · ' + fmtDate(r.fecha);
+  G('rpt-paciente').value = r.paciente || '';
   setMsg('rpt-msg','');
   updateRepeatPreview();
   openModal('modal-repeat');
@@ -2085,6 +2288,7 @@ function openRepeatNew(){
   };
   G('rpt-rid').value = '';
   G('rpt-desc').textContent = selC.name + ' · ' + fmtH(selSS) + '–' + fmtH(selSE) + ' · ' + fmtDateLong(selDate);
+  G('rpt-paciente').value = (G('cbar-paciente')&&G('cbar-paciente').value||'');
   setMsg('rpt-msg','');
   updateRepeatPreview();
   openModal('modal-repeat');
@@ -2152,20 +2356,22 @@ function doRepeat(){
   if(!toCreate.length){ setMsg('rpt-msg','No hay fechas disponibles para reservar','err'); return; }
 
   var bookUser = repeatSource._isNew ? (selUser||CU) : CU;
+  var paciente = (G('rpt-paciente').value||'').trim();
 
   setMsg('rpt-msg','Creando '+toCreate.length+' reservas...','');
   api({action:'addReservationBatch',
     userId:bookUser.id, userName:bookUser.nombre,
     consulId:repeatSource.consulId,
     fechas:toCreate.join('|'),
-    startH:repeatSource.startH, endH:repeatSource.endH},
+    startH:repeatSource.startH, endH:repeatSource.endH,
+    paciente:paciente},
   function(err,res){
     if(err||!res.ok){ setMsg('rpt-msg',res&&res.error||'Error al crear reservas','err'); return; }
     var creadas = res.creadas || toCreate;
     creadas.forEach(function(d){
       RR.push({id:'r'+Date.now()+Math.random(), consulId:String(repeatSource.consulId), fecha:d,
         startH:parseInt(repeatSource.startH), endH:parseInt(repeatSource.endH),
-        userId:String(bookUser.id), userName:bookUser.nombre});
+        userId:String(bookUser.id), userName:bookUser.nombre, paciente:paciente});
     });
     var errores = res.errores ? res.errores.length : 0;
     closeModal('modal-repeat');
@@ -2870,7 +3076,7 @@ function renderAvisos(){
     lbl.textContent='Actualizando...';
     function done(){ ind.className='ptr-indicator'; setTimeout(function(){ind.style.height='';},300); }
     if(page==='ahora'){ loadRR(function(){ renderAhora(); done(); showToast('✓ Actualizado','ok'); }); }
-    else if(page==='misreservas'){ loadRR(function(){ renderMR(); done(); showToast('✓ Actualizado','ok'); }); }
+    else if(page==='misreservas'){ loadRR(function(){ loadAP(function(){ renderMR(); done(); showToast('✓ Actualizado','ok'); }); }); }
     else if(page==='agenda'){ loadRR(function(){ renderAgenda(); done(); showToast('✓ Actualizado','ok'); }); }
     else if(page==='equipo'){ loadEquipo(); setTimeout(done, 800); showToast('✓ Actualizado','ok'); }
     else if(page==='reservar'){ loadRR(function(){ renderCal(); done(); showToast('✓ Actualizado','ok'); }); }
