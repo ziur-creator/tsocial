@@ -708,6 +708,7 @@ input[type=file]{
       <button class="btn btn-ghost btn-full" onclick="closeModal('modal-ec')">Cancelar</button>
       <button class="btn btn-pri btn-full" onclick="saveEditConsul()">Guardar</button>
     </div>
+    <button class="btn btn-danger btn-full" style="margin-top:8px" onclick="deleteConsulEntirely()">🗑 Eliminar consultorio</button>
   </div>
 </div>
 
@@ -728,7 +729,7 @@ input[type=file]{
 <div class="toast" id="toast"></div>
 
 <script>
-var API_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwp9vfFK86IAxnVury9YA0koJcJfSpoJlQaHfSiDCfcM_ICao9K9inegUO3HS-EGt4C/exec';
 
 var CU=null, RR=[], AU=[], AP=[]; // AP = agenda personal de pacientes (independiente de reservas)
 var COLS=['#1a6abf','#FFDB2E','#c0392b','#8e44ad','#d68910','#2980b9','#27ae60','#0e4d8a'];
@@ -1093,6 +1094,17 @@ function apiDemo(p,cb){
       var newC={id:'c_'+Date.now(),name:nombreNc,color:palette[CS.length%palette.length],foto:'',descripcion:p.descripcion||''};
       CS.push(newC);
       return cb(null,{ok:true,id:newC.id,consultorio:{id:newC.id,nombre:newC.name,color:newC.color,foto:'',descripcion:newC.descripcion}});
+    }
+    if(p.action==='deleteConsultorio'){
+      if(!CU||CU.rol!=='admin')return cb(null,{ok:false,error:'Sin permiso'});
+      var cidx=-1;for(i=0;i<CS.length;i++)if(CS[i].id===String(p.id))cidx=i;
+      if(cidx===-1)return cb(null,{ok:false,error:'Consultorio no encontrado'});
+      var vinculadas=DR.filter(function(r){return r.consulId===String(p.id);});
+      if(vinculadas.length>0&&!p.force){
+        return cb(null,{ok:false,error:'Este consultorio tiene '+vinculadas.length+' reserva(s) asociada(s).',needsForce:true,count:vinculadas.length});
+      }
+      CS.splice(cidx,1);
+      return cb(null,{ok:true});
     }
     if(p.action==='updateConsultorio'){
       var cid=String(p.id);
@@ -2213,6 +2225,29 @@ function saveEditConsul(){
       }
       loadAdmin();
     });
+  });
+}
+function deleteConsulEntirely(force){
+  var id=G('ec-id').value;
+  var c=byId(CS,id);if(!c)return;
+  if(!force&&!confirm('¿Eliminar el consultorio "'+c.name+'"? Esta acción no se puede deshacer.'))return;
+  setMsg('ec-msg','Eliminando...','');
+  api({action:'deleteConsultorio',adminId:CU.id,id:id,force:!!force},function(err,res){
+    if(err||!res.ok){
+      if(res&&res.needsForce){
+        if(confirm(res.error+' ¿Eliminarlo de todas formas? Las reservas ya creadas quedarán en el historial sin nombre de consultorio.')){
+          deleteConsulEntirely(true);
+        } else {
+          setMsg('ec-msg','','');
+        }
+        return;
+      }
+      setMsg('ec-msg',res&&res.error||err||'Error desconocido','err');return;
+    }
+    CS=CS.filter(function(x){return x.id!==id;});
+    closeModal('modal-ec');
+    showToast('✓ Consultorio eliminado','ok');
+    loadAdmin();
   });
 }
 
